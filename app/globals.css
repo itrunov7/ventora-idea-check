@@ -1,26 +1,91 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — single source of truth.
+   Indirection vars (--bg, --fg, ...) flip between light/dark; @theme inline
+   exposes them as Tailwind utilities (bg-bg, text-fg, border-border, ...).
+--------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --muted: #f3f3f6;
+  --border: #e6e6ec;
+  --fg: #16161a;
+  --fg-muted: #6a6a75;
+
+  --accent: #6d5efc;
+  --accent-hover: #5a4ce6;
+  --accent-fg: #ffffff;
+  --success: #16a34a;
+
+  --ring: var(--accent);
+  --radius: 1rem;
+
+  --shadow-sm: 0 1px 2px 0 rgb(16 16 26 / 0.05);
+  --shadow: 0 4px 16px -4px rgb(16 16 26 / 0.08), 0 2px 6px -3px rgb(16 16 26 / 0.06);
+}
+
+.dark {
+  --bg: #09090b;
+  --surface: #141417;
+  --muted: #1c1c21;
+  --border: #2a2a31;
+  --fg: #fafafa;
+  --fg-muted: #a0a0ac;
+
+  --accent: #7d6ffd;
+  --accent-hover: #9286ff;
+  --accent-fg: #ffffff;
+  --success: #34d27e;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow: 0 8px 24px -6px rgb(0 0 0 / 0.5), 0 2px 6px -3px rgb(0 0 0 / 0.4);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-ring: var(--ring);
+
+  --radius-2xl: var(--radius);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Restrained type scale: body + two heading sizes. */
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 1.25;
+  --text-heading--letter-spacing: -0.01em;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+
+  --shadow-soft-sm: var(--shadow-sm);
+  --shadow-soft: var(--shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 }
