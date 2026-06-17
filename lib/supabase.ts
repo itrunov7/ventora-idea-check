@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import type { Verdict } from "@/lib/types";
+import type { AdvancedReport, Verdict } from "@/lib/types";
 
 let client: SupabaseClient | null = null;
 
@@ -57,6 +57,52 @@ export async function insertLead(input: {
     return { ok: false, duplicate: error.code === UNIQUE_VIOLATION };
   }
   return { ok: true };
+}
+
+/** Persist the generated report + scheduled Resend ids for a captured lead. */
+export async function updateLeadNurture(
+  email: string,
+  input: { report: AdvancedReport; scheduledEmailIds: string[] },
+): Promise<void> {
+  const { error } = await getClient()
+    .from("leads")
+    .update({
+      report: input.report,
+      scheduled_email_ids: input.scheduledEmailIds,
+    })
+    .eq("email", email);
+  if (error) throw error;
+}
+
+export type LeadUnsubState = {
+  scheduledEmailIds: string[];
+  unsubscribedAt: string | null;
+};
+
+/** Lead fields needed to process an unsubscribe. Null if the email is unknown. */
+export async function getLeadForUnsub(
+  email: string,
+): Promise<LeadUnsubState | null> {
+  const { data, error } = await getClient()
+    .from("leads")
+    .select("scheduled_email_ids, unsubscribed_at")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    scheduledEmailIds: data.scheduled_email_ids ?? [],
+    unsubscribedAt: data.unsubscribed_at ?? null,
+  };
+}
+
+export async function markUnsubscribed(email: string): Promise<void> {
+  const { error } = await getClient()
+    .from("leads")
+    .update({ unsubscribed_at: new Date().toISOString() })
+    .eq("email", email);
+  if (error) throw error;
 }
 
 export async function getPreview(ideaHash: string): Promise<string | null> {

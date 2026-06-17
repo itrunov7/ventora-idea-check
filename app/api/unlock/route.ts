@@ -2,7 +2,8 @@ import { z } from "zod";
 
 import { generateAdvancedReport } from "@/lib/ai";
 import { ideaHash } from "@/lib/hash";
-import { getLeadByEmail, insertLead } from "@/lib/supabase";
+import { enqueueNurture } from "@/lib/nurture";
+import { getLeadByEmail, insertLead, updateLeadNurture } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
@@ -59,11 +60,30 @@ export async function POST(request: Request) {
     return Response.json({ error: "store_unavailable" }, { status: 503 });
   }
 
+  let report;
   try {
-    const report = await generateAdvancedReport(idea, verdict);
-    return Response.json({ report, ideaHash: ideaHash(idea) });
+    report = await generateAdvancedReport(idea, verdict);
   } catch (err) {
     console.error("advanced report generation failed", err);
     return Response.json({ error: "generation_failed" }, { status: 502 });
   }
+
+  // Fire the nurture sequence. Error-isolated: a Resend/store hiccup must never
+  // block the report the user is waiting for.
+  try {
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+    const scheduledEmailIds = await enqueueNurture({
+      email,
+      idea,
+      verdict,
+      report,
+      siteUrl,
+    });
+    await updateLeadNurture(email, { report, scheduledEmailIds });
+  } catch (err) {
+    console.error("nurture enqueue/persist failed", err);
+  }
+
+  return Response.json({ report, ideaHash: ideaHash(idea) });
 }
