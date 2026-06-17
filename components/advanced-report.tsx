@@ -2,6 +2,7 @@
 
 import {
   AlertTriangle,
+  ArrowRight,
   Hammer,
   Lock,
   Route,
@@ -11,10 +12,14 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmailGate } from "@/components/email-gate";
 import { PreviewCard } from "@/components/preview-card";
+import { track } from "@/lib/analytics";
 import type { AdvancedReport as AdvancedReportData } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { buildVentoraHandoffUrl } from "@/lib/ventora";
 
 function SectionTitle({
   icon,
@@ -125,6 +130,20 @@ function ReportBody({
         </div>
         <p className="text-sm text-fg-muted">{pathToFirstSale.narrative}</p>
       </section>
+
+      <a
+        href={buildVentoraHandoffUrl(idea, report.firstFiveFeatures)}
+        onClick={() =>
+          track("build_handoff_click", {
+            idea,
+            featureCount: report.firstFiveFeatures.length,
+          })
+        }
+        className={cn(buttonVariants({ size: "lg" }), "w-full")}
+      >
+        Build the real working product — free to start
+        <ArrowRight />
+      </a>
     </div>
   );
 }
