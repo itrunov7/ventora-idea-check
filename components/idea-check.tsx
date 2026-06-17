@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-import { AdvancedReport } from "@/components/advanced-report";
+import { EvaluationReport } from "@/components/evaluation/evaluation-report";
+import { ReportGate } from "@/components/report-gate";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { VerdictCard, VerdictSkeleton } from "@/components/verdict-card";
-import type { AdvancedReport as AdvancedReportData, Verdict } from "@/lib/types";
+import type { Evaluation, Verdict } from "@/lib/types";
 
 type Phase = "idle" | "checking" | "verdict" | "unlocked";
 
@@ -23,7 +24,7 @@ export function IdeaCheck() {
   const [submittedIdea, setSubmittedIdea] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [verdict, setVerdict] = useState<Verdict | null>(null);
-  const [report, setReport] = useState<AdvancedReportData | null>(null);
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [checkError, setCheckError] = useState<string | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export function IdeaCheck() {
     setPhase("checking");
     setCheckError(null);
     setVerdict(null);
-    setReport(null);
+    setEvaluation(null);
     setUnlockError(null);
 
     try {
@@ -71,8 +72,8 @@ export function IdeaCheck() {
       });
 
       if (res.ok) {
-        const data: { report: AdvancedReportData } = await res.json();
-        setReport(data.report);
+        const data: { evaluation: Evaluation } = await res.json();
+        setEvaluation(data.evaluation);
         setPhase("unlocked");
         return;
       }
@@ -98,13 +99,20 @@ export function IdeaCheck() {
         <CardContent className="flex flex-col gap-3">
           <form onSubmit={handleCheck} className="flex flex-col gap-3 sm:flex-row">
             <Input
+              id="idea-input"
+              className="h-12 text-base"
               placeholder="An app that helps freelancers track invoices"
               aria-label="Your startup idea"
               value={idea}
               disabled={phase === "checking"}
               onChange={(e) => setIdea(e.target.value)}
             />
-            <Button type="submit" className="shrink-0" disabled={!canSubmit}>
+            <Button
+              type="submit"
+              size="lg"
+              className="shrink-0"
+              disabled={!canSubmit}
+            >
               {phase === "checking" ? (
                 <>
                   <Loader2 className="animate-spin" />
@@ -118,6 +126,9 @@ export function IdeaCheck() {
               )}
             </Button>
           </form>
+          <p className="font-mono text-[12px] text-fg-muted">
+            Free · instant · no signup to start
+          </p>
           {checkError ? (
             <p className="text-sm text-fg-muted" role="alert">
               {checkError}
@@ -129,16 +140,18 @@ export function IdeaCheck() {
       {phase === "checking" ? <VerdictSkeleton /> : null}
 
       {verdict && phase !== "checking" ? (
-        <>
-          <VerdictCard verdict={verdict} />
-          <AdvancedReport
-            idea={submittedIdea}
-            report={report}
-            pending={unlocking}
-            errorCode={unlockError}
-            onUnlock={handleUnlock}
-          />
-        </>
+        phase === "unlocked" && evaluation ? (
+          <EvaluationReport mode="report" data={evaluation} />
+        ) : (
+          <>
+            <VerdictCard verdict={verdict} />
+            <ReportGate
+              pending={unlocking}
+              errorCode={unlockError}
+              onUnlock={handleUnlock}
+            />
+          </>
+        )
       ) : null}
     </div>
   );

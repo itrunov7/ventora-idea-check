@@ -3,15 +3,14 @@ import "server-only";
 import { ctaUrl, unsubscribeUrl } from "@/lib/email/links";
 import { recap, shipped, waiting } from "@/lib/email/templates";
 import { sendNurtureEmail } from "@/lib/resend";
-import type { AdvancedReport, Verdict } from "@/lib/types";
+import type { Evaluation } from "@/lib/types";
 
 const DAY = 24 * 60 * 60 * 1000;
 
 export type EnqueueNurtureInput = {
   email: string;
   idea: string;
-  verdict: Verdict;
-  report: AdvancedReport;
+  evaluation: Evaluation;
   /** Absolute origin used to build unsubscribe + link targets. */
   siteUrl: string;
   /**
@@ -39,21 +38,21 @@ function unsubHeaders(unsubUrl: string): Record<string, string> {
 export async function enqueueNurture(
   input: EnqueueNurtureInput,
 ): Promise<string[]> {
-  const { email, idea, verdict, report, siteUrl, immediate } = input;
+  const { email, idea, evaluation, siteUrl, immediate } = input;
 
   const unsubUrl = unsubscribeUrl(email, siteUrl);
   const headers = unsubHeaders(unsubUrl);
 
-  const day0 = recap(verdict, report, {
-    build: ctaUrl(idea, report.firstFiveFeatures, "day0"),
+  const day0 = recap(evaluation, {
+    build: ctaUrl(idea, "day0"),
     unsubscribe: unsubUrl,
   });
   const day2 = shipped(idea, {
-    build: ctaUrl(idea, report.firstFiveFeatures, "day2"),
+    build: ctaUrl(idea, "day2"),
     unsubscribe: unsubUrl,
   });
   const day5 = waiting(idea, {
-    build: ctaUrl(idea, report.firstFiveFeatures, "day5"),
+    build: ctaUrl(idea, "day5"),
     unsubscribe: unsubUrl,
   });
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { generateAdvancedReport } from "@/lib/ai";
+import { generateEvaluation } from "@/lib/ai";
 import { ideaHash } from "@/lib/hash";
 import { enqueueNurture } from "@/lib/nurture";
 import { getLeadByEmail, insertLead, updateLeadNurture } from "@/lib/supabase";
@@ -60,11 +60,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "store_unavailable" }, { status: 503 });
   }
 
-  let report;
+  let evaluation;
   try {
-    report = await generateAdvancedReport(idea, verdict);
+    evaluation = await generateEvaluation(idea);
   } catch (err) {
-    console.error("advanced report generation failed", err);
+    console.error("evaluation generation failed", err);
     return Response.json({ error: "generation_failed" }, { status: 502 });
   }
 
@@ -76,14 +76,13 @@ export async function POST(request: Request) {
     const scheduledEmailIds = await enqueueNurture({
       email,
       idea,
-      verdict,
-      report,
+      evaluation,
       siteUrl,
     });
-    await updateLeadNurture(email, { report, scheduledEmailIds });
+    await updateLeadNurture(email, { evaluation, scheduledEmailIds });
   } catch (err) {
     console.error("nurture enqueue/persist failed", err);
   }
 
-  return Response.json({ report, ideaHash: ideaHash(idea) });
+  return Response.json({ evaluation, ideaHash: ideaHash(idea) });
 }

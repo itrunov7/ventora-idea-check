@@ -3,23 +3,20 @@ import "server-only";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
-import type { AdvancedReport, Verdict } from "@/lib/types";
+import type { Evaluation, Verdict } from "@/lib/types";
 
 const MODEL = "openai/gpt-5.4";
 
 const GUARDRAILS = [
   "You produce evaluation and marketing framing ONLY.",
   "NEVER output working code, pseudo-code, API designs, database schemas, system architecture, file structures, or any technical implementation.",
+  "NEVER output build instructions, tech stacks, team plans, hiring plans, or product roadmaps.",
   "NEVER produce an exportable spec, PRD, or investor/pitch deck.",
   "Everything must read as a teaser of what Ventora would build — not a deliverable the reader could build from on their own.",
 ].join(" ");
 
 const verdictSchema = z.object({
-  score: z
-    .number()
-    .min(0)
-    .max(100)
-    .describe("Overall idea strength, 0-100."),
+  score: z.number().min(0).max(100).describe("Overall idea strength, 0-100."),
   verdict: z
     .enum(["promising", "mixed", "risky"])
     .describe("One-word call on the idea."),
@@ -33,41 +30,79 @@ const verdictSchema = z.object({
     .describe("Two-sentence punchy verdict the founder reads first."),
 });
 
-const reportSchema = z.object({
-  firstFiveFeatures: z
+const signalSchema = z.object({
+  text: z.string().describe("One specific sentence of evidence."),
+  tag: z.string().max(12).describe("Short category tag, <= 12 chars."),
+});
+
+const marketTierSchema = z.object({
+  value: z.string().describe('Dollar figure like "$1.4B".'),
+  label: z.string().describe("One short line describing the tier."),
+});
+
+export const evaluationSchema = z.object({
+  idea: z.string(),
+  viabilityScore: z.number().min(0).max(100),
+  verdict: z.object({
+    label: z.string().describe('Short call like "Worth building".'),
+    tone: z.enum(["go", "caution", "no"]),
+    confidence: z.enum(["high", "medium", "low"]),
+  }),
+  synthesis: z.string().max(200).describe("One sentence, <= 200 chars."),
+  quickStats: z.object({
+    demand: z.enum(["High", "Medium", "Low"]),
+    market: z.enum(["High", "Medium", "Low"]),
+    willingToPay: z.enum(["Yes", "Maybe", "No"]),
+  }),
+  greenLights: z.array(signalSchema).min(3).max(4),
+  redFlags: z.array(signalSchema).min(3).max(4),
+  scores: z.object({
+    marketTiming: z.number().min(0).max(100),
+    problemFit: z.number().min(0).max(100),
+    demand: z.number().min(0).max(100),
+    monetization: z.number().min(0).max(100),
+    differentiation: z.number().min(0).max(100),
+    competition: z.number().min(0).max(100),
+  }),
+  market: z.object({
+    tam: marketTierSchema,
+    sam: marketTierSchema,
+    som: marketTierSchema,
+  }),
+  demandTrend: z.object({
+    changePct: z.number(),
+    points: z.array(z.number().min(0).max(100)).length(9),
+  }),
+  competitors: z
     .array(
       z.object({
-        name: z.string().describe("Short feature name."),
-        why: z
-          .string()
-          .describe("One line on why it ships first. NO implementation detail."),
+        name: z.string(),
+        initial: z.string().max(2),
+        gap: z.string().describe("One line on the opening they leave."),
+        reachScore: z.number().min(0).max(100),
       }),
     )
-    .length(5)
-    .describe("The first 5 things Ventora would build — names + one-liners only."),
-  landingHeadline: z.string().describe("Punchy landing page headline."),
-  landingSubhead: z.string().describe("One supporting sentence under the headline."),
-  validation: z.object({
-    marketSize: z.string().describe("Rough market size with a number."),
-    competitors: z
-      .array(z.object({ name: z.string(), note: z.string() }))
-      .min(2)
-      .max(3)
-      .describe("2-3 real-ish competitors with a one-line snapshot each."),
-    suggestedPrice: z.string().describe("A concrete suggested price point."),
-    closestFailurePattern: z
-      .string()
-      .describe("One line: the most common way this kind of idea dies."),
-  }),
-  pathToFirstSale: z.object({
-    visitors: z.number().describe("Visitors needed."),
-    conversionRate: z.number().describe("Assumed conversion rate as a percent, e.g. 2 for 2%."),
-    days: z.number().describe("Estimated days to first paying customer."),
-    narrative: z
-      .string()
-      .describe("One sentence tying visitors x conversion -> first sale in N days."),
+    .length(3),
+  edge: z.string().describe("One sentence: the user's wedge."),
+  pricing: z.object({
+    suggested: z.string().describe('Like "$29".'),
+    unit: z.string().describe('Like "/ chair / month".'),
+    rationale: z.string(),
+    rangeLowPct: z.number().min(0).max(100),
+    rangeHighPct: z.number().min(0).max(100),
   }),
 });
+
+const EVALUATION_SYSTEM = [
+  "You are Ventora's startup idea evaluator. You produce a premium, honest evaluation that makes a founder feel their idea is understood and worth building — ending in a handoff to Ventora to build it.",
+  "Stay entirely on 'is this worth building': market, demand, competition, pricing, validation.",
+  "GENERATION RULES:",
+  "- Be specific to THIS idea; never generic boilerplate.",
+  "- Market numbers and the demand trend are estimates — keep them plausible and clearly framed as estimates; do NOT fabricate precise citations or sources.",
+  "- Name real competitors when known; if unknown, describe category players, never invent brands.",
+  "- Never output build instructions, tech stacks, team plans, or roadmaps.",
+  GUARDRAILS,
+].join("\n");
 
 export async function generateVerdict(idea: string): Promise<Verdict> {
   const { output } = await generateText({
@@ -83,28 +118,44 @@ export async function generateVerdict(idea: string): Promise<Verdict> {
   return output as Verdict;
 }
 
-export async function generateAdvancedReport(
-  idea: string,
-  verdict: Verdict,
-): Promise<AdvancedReport> {
-  const { output } = await generateText({
-    model: MODEL,
-    output: Output.object({ schema: reportSchema }),
-    system: `You are Ventora's product strategist creating a locked "preview" report that makes the founder feel Ventora already started building their product. ${GUARDRAILS}`,
-    prompt: [
-      `Idea: ${idea}`,
-      `Prior verdict: ${verdict.verdict} (${verdict.score}/100). ${verdict.summary}`,
-      "",
-      "Produce a teaser report:",
-      "(a) The first 5 features Ventora would build first — names + one-liners, framed as 'what Ventora will build first'. No implementation.",
-      "(b) A landing headline + subhead for this product.",
-      "(c) Validation signals: rough market size, 2-3 competitor snapshots, a suggested price, and the closest failure pattern.",
-      "(d) Path to first sale: visitors x conversion rate -> first paying customer in ~N days.",
-    ].join("\n"),
-    providerOptions: {
-      gateway: { tags: ["feature:advanced-report", "env:production"] },
-    },
-  });
+/**
+ * Generates the full evaluation for an idea. Validates the model output with
+ * zod and retries ONCE on a parse failure before surfacing a real error.
+ */
+export async function generateEvaluation(idea: string): Promise<Evaluation> {
+  const prompt = [
+    `Idea: ${idea}`,
+    "",
+    "Produce the complete evaluation as JSON matching the schema exactly:",
+    "- A viability score (0-100), a short verdict label with tone (go/caution/no) and confidence.",
+    "- A one-sentence synthesis (<= 200 chars).",
+    "- Quick stats: demand, market, willing to pay.",
+    "- 3-4 green lights and 3-4 red flags, each a specific sentence with a short tag.",
+    "- Six 0-100 scores: marketTiming, problemFit, demand, monetization, differentiation, competition.",
+    "- Market sizing: TAM, SAM, SOM (dollar value + one-line label each), framed as estimates.",
+    "- A 24-month demand trend: a percent change and exactly 9 points (0-100).",
+    "- Exactly 3 competitors (real or category players), each with an initial, the gap they leave, and a 0-100 reach score.",
+    "- The user's edge in one sentence.",
+    "- Pricing: a suggested price + unit, a rationale, and a low/high position (0-100) on the price scale.",
+  ].join("\n");
 
-  return output as AdvancedReport;
+  async function attempt(): Promise<Evaluation> {
+    const { output } = await generateText({
+      model: MODEL,
+      output: Output.object({ schema: evaluationSchema }),
+      system: EVALUATION_SYSTEM,
+      prompt,
+      providerOptions: {
+        gateway: { tags: ["feature:evaluation", "env:production"] },
+      },
+    });
+    return evaluationSchema.parse(output) as Evaluation;
+  }
+
+  try {
+    return await attempt();
+  } catch (err) {
+    console.error("evaluation generation failed, retrying once", err);
+    return await attempt();
+  }
 }

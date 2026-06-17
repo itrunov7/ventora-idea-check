@@ -18,7 +18,11 @@
   --accent: #6d5efc;
   --accent-hover: #5a4ce6;
   --accent-fg: #ffffff;
+  --accent-soft: #f3f1ff;
   --success: #16a34a;
+  --success-soft: #e4f7ef;
+  --danger: #ef5f3c;
+  --danger-soft: #fdeae4;
 
   --ring: var(--accent);
   --radius: 1rem;
@@ -38,7 +42,11 @@
   --accent: #7d6ffd;
   --accent-hover: #9286ff;
   --accent-fg: #ffffff;
+  --accent-soft: #211d3a;
   --success: #34d27e;
+  --success-soft: #10301f;
+  --danger: #ff7a5c;
+  --danger-soft: #3a1d14;
 
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
   --shadow: 0 8px 24px -6px rgb(0 0 0 / 0.5), 0 2px 6px -3px rgb(0 0 0 / 0.4);
@@ -55,7 +63,11 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-ring: var(--ring);
 
   --radius-2xl: var(--radius);

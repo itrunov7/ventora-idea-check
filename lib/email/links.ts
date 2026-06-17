@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-import type { BuildFeature } from "@/lib/types";
 import { buildVentoraHandoffUrl } from "@/lib/ventora";
 
 export type NurtureCampaign = "day0" | "day2" | "day5";
@@ -16,12 +15,8 @@ export function withUtm(rawUrl: string, campaign: NurtureCampaign): string {
 }
 
 /** Build CTA link (handoff to the Ventora builder) tagged for attribution. */
-export function ctaUrl(
-  idea: string,
-  features: BuildFeature[],
-  campaign: NurtureCampaign,
-): string {
-  return withUtm(buildVentoraHandoffUrl(idea, features), campaign);
+export function ctaUrl(idea: string, campaign: NurtureCampaign): string {
+  return withUtm(buildVentoraHandoffUrl(idea), campaign);
 }
 
 function unsubSecret(): string {

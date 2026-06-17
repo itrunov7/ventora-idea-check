@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import type { AdvancedReport, Verdict } from "@/lib/types";
+import type { Evaluation, Verdict } from "@/lib/types";
 
 let client: SupabaseClient | null = null;
 
@@ -59,15 +59,15 @@ export async function insertLead(input: {
   return { ok: true };
 }
 
-/** Persist the generated report + scheduled Resend ids for a captured lead. */
+/** Persist the generated evaluation + scheduled Resend ids for a captured lead. */
 export async function updateLeadNurture(
   email: string,
-  input: { report: AdvancedReport; scheduledEmailIds: string[] },
+  input: { evaluation: Evaluation; scheduledEmailIds: string[] },
 ): Promise<void> {
   const { error } = await getClient()
     .from("leads")
     .update({
-      report: input.report,
+      report: input.evaluation,
       scheduled_email_ids: input.scheduledEmailIds,
     })
     .eq("email", email);

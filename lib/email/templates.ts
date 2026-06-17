@@ -1,4 +1,4 @@
-import type { AdvancedReport, Verdict } from "@/lib/types";
+import type { Evaluation } from "@/lib/types";
 
 export type EmailContent = {
   subject: string;
@@ -57,58 +57,51 @@ Ventora Idea Check &middot; You got this email because you ran an idea check.<br
 </html>`;
 }
 
-/** Day 0 — report recap with the primary build CTA. */
+/** Day 0 — evaluation recap with the primary build CTA. */
 export function recap(
-  verdict: Verdict,
-  report: AdvancedReport,
+  evaluation: Evaluation,
   links: TemplateLinks,
 ): EmailContent {
-  const subject = `Your idea check: ${verdict.score}/100`;
+  const subject = `Your idea check: ${evaluation.viabilityScore}/100`;
 
-  const features = report.firstFiveFeatures
+  const greens = evaluation.greenLights
     .slice(0, 3)
     .map(
-      (f) =>
-        `<li style="margin-bottom:6px;"><strong>${escapeHtml(f.name)}</strong> — ${escapeHtml(f.why)}</li>`,
+      (g) => `<li style="margin-bottom:6px;">${escapeHtml(g.text)}</li>`,
     )
     .join("");
 
   const inner = `
 <p style="margin:0 0 8px;font-size:14px;color:#777;">Your verdict</p>
-<h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;">${verdict.score}/100 &middot; ${escapeHtml(verdict.verdict)}</h1>
-<p style="margin:0 0 24px;">${escapeHtml(verdict.summary)}</p>
+<h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;">${evaluation.viabilityScore}/100 &middot; ${escapeHtml(evaluation.verdict.label)}</h1>
+<p style="margin:0 0 24px;">${escapeHtml(evaluation.synthesis)}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:collapse;">
-<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Demand</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(verdict.demand)}</td></tr>
-<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Market size</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(verdict.marketSize)}</td></tr>
-<tr><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;"><strong>Willingness to pay</strong></td><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">${escapeHtml(verdict.willingnessToPay)}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Demand</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(evaluation.quickStats.demand)}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Market (TAM)</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(evaluation.market.tam.value)}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;"><strong>Suggested price</strong></td><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">${escapeHtml(evaluation.pricing.suggested)} ${escapeHtml(evaluation.pricing.unit)}</td></tr>
 </table>
 
-<h2 style="margin:0 0 8px;font-size:18px;">First features to build</h2>
-<ul style="margin:0 0 24px;padding-left:20px;">${features}</ul>
-
-<h2 style="margin:0 0 8px;font-size:18px;">Path to first sale</h2>
-<p style="margin:0 0 24px;">${escapeHtml(report.pathToFirstSale.narrative)}</p>
+<h2 style="margin:0 0 8px;font-size:18px;">What's working for it</h2>
+<ul style="margin:0 0 24px;padding-left:20px;">${greens}</ul>
 
 <p style="margin:0 0 24px;">${button(links.build, "Build this idea")}</p>
 <p style="margin:0;color:#777;font-size:14px;">Most ideas die in a doc. Yours doesn't have to.</p>
 `;
 
-  const text = `Your idea check: ${verdict.score}/100 (${verdict.verdict})
+  const text = `Your idea check: ${evaluation.viabilityScore}/100 (${evaluation.verdict.label})
 
-${verdict.summary}
+${evaluation.synthesis}
 
-Demand: ${verdict.demand}
-Market size: ${verdict.marketSize}
-Willingness to pay: ${verdict.willingnessToPay}
+Demand: ${evaluation.quickStats.demand}
+Market (TAM): ${evaluation.market.tam.value}
+Suggested price: ${evaluation.pricing.suggested} ${evaluation.pricing.unit}
 
-First features to build:
-${report.firstFiveFeatures
+What's working for it:
+${evaluation.greenLights
   .slice(0, 3)
-  .map((f) => `- ${f.name}: ${f.why}`)
+  .map((g) => `- ${g.text}`)
   .join("\n")}
-
-Path to first sale: ${report.pathToFirstSale.narrative}
 
 Build this idea: ${links.build}
 
