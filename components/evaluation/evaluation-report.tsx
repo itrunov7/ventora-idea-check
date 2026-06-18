@@ -2,6 +2,7 @@ import type { Evaluation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import { CompetitorList } from "./competitor-list";
+import { EarningsPotential } from "./earnings-potential";
 import { MarketRings } from "./market-rings";
 import { PricingBand } from "./pricing-band";
 import { Reveal } from "./reveal";
@@ -79,6 +80,11 @@ export function EvaluationReport({
       <SectionHead n="04" title="What you can charge" sub="benchmarked to the field" />
       <Reveal>
         <PricingBand pricing={data.pricing} />
+      </Reveal>
+
+      <SectionHead n="05" title="What this could earn you" sub="estimates from your pricing" />
+      <Reveal>
+        <EarningsPotential earnings={data.earnings} />
       </Reveal>
 
       <div className="mt-6">

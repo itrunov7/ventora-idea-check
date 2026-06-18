@@ -93,4 +93,66 @@ export const EXAMPLE_EVALUATION: Evaluation = {
     rangeLowPct: 32,
     rangeHighPct: 58,
   },
+  earnings: {
+    headline: "A realistic path to $30k+/year in recurring income.",
+    summary:
+      "At $29/chair, you only need a few hundred barbers to clear six figures — and every one of them sticks around for years. This is a slow-burn cash machine, not a lottery ticket.",
+    scenarios: [
+      {
+        label: "Conservative",
+        mrr: "$870",
+        arr: "$10k",
+        basis: "30 chairs @ $29/mo",
+      },
+      {
+        label: "Likely",
+        mrr: "$2.3k",
+        arr: "$28k",
+        basis: "80 chairs @ $29/mo",
+      },
+      {
+        label: "Breakout",
+        mrr: "$8.7k",
+        arr: "$104k",
+        basis: "300 chairs @ $29/mo",
+      },
+    ],
+    rampPoints: [4, 9, 16, 24, 34, 45, 58, 72, 88],
+    rampCaption: "Path to ~$2.3k MRR over the first 18 months.",
+    proof: [
+      {
+        name: "Squire",
+        figure: "est. ~$30M ARR",
+        text: "Charges barbershops monthly for booking + payments — proof the category pays for software.",
+      },
+      {
+        name: "Solo founder, niche booking SaaS",
+        figure: "reportedly ~$15k/mo",
+        text: "One operator quietly running a single-vertical scheduling tool with no team.",
+      },
+      {
+        name: "Booksy",
+        figure: "est. millions in ARR",
+        text: "Marketplace + subscriptions across grooming — the demand is real and recurring.",
+      },
+    ],
+    benefits: [
+      {
+        title: "Recurring income",
+        text: "Subscriptions bill every month whether you're working or not — predictable cash you can plan a life around.",
+      },
+      {
+        title: "A sellable asset",
+        text: "Sticky B2B SaaS with low churn is the kind of business that sells for 3-5x ARR down the line.",
+      },
+      {
+        title: "Freedom & leverage",
+        text: "Software serves 30 or 3,000 barbers with almost the same effort — your time stops being the bottleneck.",
+      },
+      {
+        title: "Own the niche",
+        text: "Be the obvious choice for solo barbers before a big platform notices the gap you're filling.",
+      },
+    ],
+  },
 };

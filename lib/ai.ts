@@ -92,14 +92,72 @@ export const evaluationSchema = z.object({
     rangeLowPct: z.number().min(0).max(100),
     rangeHighPct: z.number().min(0).max(100),
   }),
+  earnings: z.object({
+    headline: z
+      .string()
+      .describe("Emotional one-liner about the money on the table."),
+    summary: z
+      .string()
+      .max(220)
+      .describe("1-2 sentences, grounded but motivating."),
+    scenarios: z
+      .array(
+        z.object({
+          label: z
+            .string()
+            .describe('"Conservative", "Likely", or "Breakout".'),
+          mrr: z.string().describe('Monthly recurring revenue like "$2.3k".'),
+          arr: z.string().describe('Annual recurring revenue like "$28k".'),
+          basis: z
+            .string()
+            .describe('How the number is reached, e.g. "80 chairs @ $29/mo".'),
+        }),
+      )
+      .length(3)
+      .describe("Conservative, Likely, Breakout — in that order."),
+    rampPoints: z
+      .array(z.number().min(0).max(100))
+      .length(9)
+      .describe("MRR ramp over the first ~18 months, 0-100."),
+    rampCaption: z
+      .string()
+      .describe('Names the target MRR, e.g. "Path to ~$5k MRR in 18 months".'),
+    proof: z
+      .array(
+        z.object({
+          name: z
+            .string()
+            .describe("Real player or a generic 'solo founder in this space'."),
+          figure: z
+            .string()
+            .describe("Revenue figure clearly estimated: 'est.' / 'reportedly'."),
+          text: z.string().describe("One line on how they make the money."),
+        }),
+      )
+      .min(2)
+      .max(3),
+    benefits: z
+      .array(
+        z.object({
+          title: z.string().max(28).describe("Short benefit label."),
+          text: z
+            .string()
+            .describe("One sentence, specific to this idea."),
+        }),
+      )
+      .min(3)
+      .max(4),
+  }),
 });
 
 const EVALUATION_SYSTEM = [
-  "You are Ventora's startup idea evaluator. You produce a premium, honest evaluation that makes a founder feel their idea is understood and worth building — ending in a handoff to Ventora to build it.",
-  "Stay entirely on 'is this worth building': market, demand, competition, pricing, validation.",
+  "You are Ventora's startup idea evaluator. You produce a premium, honest evaluation that makes a founder feel their idea is understood, worth building, and capable of earning them real money — ending in a handoff to Ventora to build it.",
+  "Stay on 'is this worth building and what could it earn me': market, demand, competition, pricing, validation, earning potential, and the personal benefits of building it.",
   "GENERATION RULES:",
   "- Be specific to THIS idea; never generic boilerplate.",
   "- Market numbers and the demand trend are estimates — keep them plausible and clearly framed as estimates; do NOT fabricate precise citations or sources.",
+  "- Earnings figures must derive from the suggested price multiplied by plausible customer counts, and be framed as estimates; competitor/comparable revenue must be clearly estimated ('est.'/'reportedly'), never a fabricated precise citation.",
+  "- Make the earnings and benefits motivating and emotionally resonant, but grounded — no hype that the numbers can't support.",
   "- Name real competitors when known; if unknown, describe category players, never invent brands.",
   "- Never output build instructions, tech stacks, team plans, or roadmaps.",
   GUARDRAILS,
@@ -135,6 +193,11 @@ export async function generateEvaluation(idea: string): Promise<Evaluation> {
     "- Exactly 3 competitors (real or category players), each with an initial, the gap they leave, and a 0-100 reach score.",
     "- The user's edge in one sentence.",
     "- Pricing: a suggested price + unit, a rationale, and a low/high position (0-100) on the price scale.",
+    "- Earnings: an emotional headline + 1-2 sentence summary of the money on the table.",
+    "- Three earnings scenarios (Conservative, Likely, Breakout) each with MRR, ARR, and the basis (customer count x the suggested price).",
+    "- A 9-point MRR ramp (0-100) and a caption naming the target MRR.",
+    "- 2-3 proof points on how real players or solo founders already make money here — figures clearly framed as estimates ('est.'/'reportedly'), never invented precise sources.",
+    "- 3-4 concrete benefits (recurring revenue, a sellable asset, freedom, leverage) specific to THIS idea.",
   ].join("\n");
 
   async function attempt(): Promise<Evaluation> {

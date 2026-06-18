@@ -37,6 +37,34 @@ export type EvaluationCompetitor = {
   reachScore: number;
 };
 
+export type EarningsScenario = {
+  label: string;
+  mrr: string;
+  arr: string;
+  basis: string;
+};
+
+export type EarningsProof = {
+  name: string;
+  figure: string;
+  text: string;
+};
+
+export type Benefit = {
+  title: string;
+  text: string;
+};
+
+export type Earnings = {
+  headline: string;
+  summary: string;
+  scenarios: EarningsScenario[];
+  rampPoints: number[];
+  rampCaption: string;
+  proof: EarningsProof[];
+  benefits: Benefit[];
+};
+
 export type Evaluation = {
   idea: string;
   viabilityScore: number;
@@ -72,6 +100,7 @@ export type Evaluation = {
     rangeLowPct: number;
     rangeHighPct: number;
   };
+  earnings: Earnings;
 };
 
 export type UnlockResponse = {
