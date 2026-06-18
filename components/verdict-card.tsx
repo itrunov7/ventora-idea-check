@@ -45,9 +45,10 @@ export function VerdictCard({ verdict }: { verdict: Verdict }) {
           <CardTitle>The verdict</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={meta.variant}>{meta.label}</Badge>
-            <span className="flex items-center gap-1 text-sm font-semibold text-fg">
-              <Gauge className="size-4 text-fg-muted" />
-              {Math.round(verdict.score)}/100
+            <span className="flex items-baseline gap-1 font-mono text-sm font-semibold text-fg">
+              <Gauge className="size-4 translate-y-0.5 text-accent" />
+              {Math.round(verdict.score)}
+              <span className="text-fg-muted">/100</span>
             </span>
           </div>
         </div>
