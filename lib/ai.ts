@@ -1,11 +1,12 @@
 import "server-only";
 
+import { openai } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import type { Evaluation, Verdict } from "@/lib/types";
 
-const MODEL = "openai/gpt-5.4";
+const MODEL = openai(process.env.OPENAI_MODEL ?? "gpt-5.4");
 
 const GUARDRAILS = [
   "You produce evaluation and marketing framing ONLY.",
@@ -110,9 +111,6 @@ export async function generateVerdict(idea: string): Promise<Verdict> {
     output: Output.object({ schema: verdictSchema }),
     system: `You are Ventora's startup idea evaluator. Be sharp, specific, and honest. ${GUARDRAILS}`,
     prompt: `Evaluate this startup idea in one sentence each, then give a 0-100 score and a one-word verdict.\n\nIdea: ${idea}`,
-    providerOptions: {
-      gateway: { tags: ["feature:verdict", "env:production"] },
-    },
   });
 
   return output as Verdict;
@@ -145,9 +143,6 @@ export async function generateEvaluation(idea: string): Promise<Evaluation> {
       output: Output.object({ schema: evaluationSchema }),
       system: EVALUATION_SYSTEM,
       prompt,
-      providerOptions: {
-        gateway: { tags: ["feature:evaluation", "env:production"] },
-      },
     });
     return evaluationSchema.parse(output) as Evaluation;
   }

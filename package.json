@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.73",
     "@supabase/supabase-js": "^2.108.2",
     "ai": "^6.0.206",
     "class-variance-authority": "^0.7.1",
