@@ -2,8 +2,8 @@ import { Lock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmailGate } from "@/components/email-gate";
 import { EvaluationSkeleton } from "@/components/evaluation/skeletons";
+import { VerifyGate } from "@/components/verify-gate";
 
 /** Non-readable teaser shown behind the email gate. */
 function LockedTeaser() {
@@ -33,19 +33,29 @@ function LockedTeaser() {
 }
 
 /**
- * Email gate guarding the full evaluation. Pre-submit shows a blurred teaser +
- * the email form; while generating it shows the report skeleton.
+ * Email + one-time-code gate guarding the full evaluation. Shows the verify
+ * flow over a blurred teaser; while generating it shows the report skeleton.
  */
 export function ReportGate({
-  pending,
+  codeSent,
+  codeSentAt,
+  requesting,
+  verifying,
   errorCode,
-  onUnlock,
+  onRequestCode,
+  onVerify,
+  onChangeEmail,
 }: {
-  pending: boolean;
+  codeSent: boolean;
+  codeSentAt: number | null;
+  requesting: boolean;
+  verifying: boolean;
   errorCode: string | null;
-  onUnlock: (email: string) => void;
+  onRequestCode: (email: string) => void;
+  onVerify: (email: string, code: string) => void;
+  onChangeEmail: () => void;
 }) {
-  if (pending) return <EvaluationSkeleton />;
+  if (verifying) return <EvaluationSkeleton />;
 
   return (
     <Card className="w-full">
@@ -62,15 +72,22 @@ export function ReportGate({
         <div className="relative">
           <LockedTeaser />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface/90 p-6 text-center shadow-soft backdrop-blur-sm">
-              <p className="max-w-sm text-sm text-fg-muted">
-                Get your full evaluation — verdict, signals, market sizing,
-                competitors, pricing, and the path to building it.
-              </p>
-              <EmailGate
-                pending={pending}
+            <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-surface/90 p-6 text-center shadow-soft backdrop-blur-sm">
+              {!codeSent ? (
+                <p className="max-w-sm text-sm text-fg-muted">
+                  Get your full evaluation — verdict, signals, market sizing,
+                  competitors, pricing, and the path to building it.
+                </p>
+              ) : null}
+              <VerifyGate
+                codeSent={codeSent}
+                codeSentAt={codeSentAt}
+                requesting={requesting}
+                verifying={verifying}
                 errorCode={errorCode}
-                onSubmit={onUnlock}
+                onRequestCode={onRequestCode}
+                onVerify={onVerify}
+                onChangeEmail={onChangeEmail}
               />
             </div>
           </div>

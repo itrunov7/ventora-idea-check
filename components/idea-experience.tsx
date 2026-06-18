@@ -21,6 +21,9 @@ export function IdeaExperience({ children }: { children?: React.ReactNode }) {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeSentAt, setCodeSentAt] = useState<number | null>(null);
+  const [requestingCode, setRequestingCode] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
 
@@ -68,7 +71,33 @@ export function IdeaExperience({ children }: { children?: React.ReactNode }) {
     }
   }
 
-  async function handleUnlock(email: string) {
+  async function handleRequestCode(email: string) {
+    setRequestingCode(true);
+    setUnlockError(null);
+
+    try {
+      const res = await fetch("/api/unlock/code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setCodeSent(true);
+        setCodeSentAt(Date.now());
+        return;
+      }
+
+      const data: { error?: string } = await res.json().catch(() => ({}));
+      setUnlockError(data.error ?? "send_failed");
+    } catch {
+      setUnlockError("send_failed");
+    } finally {
+      setRequestingCode(false);
+    }
+  }
+
+  async function handleVerify(email: string, code: string) {
     if (!verdict) return;
     setUnlocking(true);
     setUnlockError(null);
@@ -77,7 +106,7 @@ export function IdeaExperience({ children }: { children?: React.ReactNode }) {
       const res = await fetch("/api/unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, idea: submittedIdea, verdict }),
+        body: JSON.stringify({ email, code, idea: submittedIdea, verdict }),
       });
 
       if (res.ok) {
@@ -96,12 +125,22 @@ export function IdeaExperience({ children }: { children?: React.ReactNode }) {
     }
   }
 
+  function handleChangeEmail() {
+    setCodeSent(false);
+    setCodeSentAt(null);
+    setUnlockError(null);
+  }
+
   const reset = useCallback(() => {
     setPhase("idle");
     setVerdict(null);
     setEvaluation(null);
     setUnlockError(null);
     setCheckError(null);
+    setCodeSent(false);
+    setCodeSentAt(null);
+    setRequestingCode(false);
+    setUnlocking(false);
     setIdea("");
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -124,9 +163,14 @@ export function IdeaExperience({ children }: { children?: React.ReactNode }) {
           <div className="mx-auto mt-2 flex w-full max-w-[860px] flex-col gap-8">
             <VerdictCard verdict={verdict} />
             <ReportGate
-              pending={unlocking}
+              codeSent={codeSent}
+              codeSentAt={codeSentAt}
+              requesting={requestingCode}
+              verifying={unlocking}
               errorCode={unlockError}
-              onUnlock={handleUnlock}
+              onRequestCode={handleRequestCode}
+              onVerify={handleVerify}
+              onChangeEmail={handleChangeEmail}
             />
           </div>
         ) : null}
