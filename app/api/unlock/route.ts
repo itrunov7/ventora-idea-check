@@ -14,6 +14,8 @@ import {
 import { verifyCode } from "@/lib/verification";
 
 export const runtime = "nodejs";
+// Full report generation plus DB writes and nurture enqueue; give it headroom.
+export const maxDuration = 60;
 
 const verdictSchema = z.object({
   score: z.number(),

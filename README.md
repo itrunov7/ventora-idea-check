@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ventora Idea Check
+
+Validate a startup idea in seconds. Users submit an idea, get an AI verdict
+(score + demand/market/willingness-to-pay), then unlock a full report behind an
+email one-time code. Captured leads enter an automated nurture email sequence.
+
+Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Supabase,
+OpenAI (via the AI SDK), Higgsfield (product preview images), and Resend (email).
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local   # fill in the values below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/page.tsx` — landing + idea submission flow.
+- `app/api/verdict` — generates the quick AI verdict.
+- `app/api/unlock` — verifies the OTP, generates the full report, enqueues nurture.
+- `app/api/unlock/code` — issues email verification codes.
+- `app/api/preview` — Higgsfield product preview image (graceful fallback on failure).
+- `app/api/unsubscribe` — one-click unsubscribe via signed HMAC token.
+- `lib/*` — AI, Supabase, Resend, Higgsfield, hashing, and nurture logic (all server-only).
 
-## Learn More
+## Environment variables
 
-To learn more about Next.js, take a look at the following resources:
+All variables are **server-only** unless prefixed with `NEXT_PUBLIC_`. See
+[`.env.example`](.env.example) for the full annotated list.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Text generation (verdict + report). |
+| `OPENAI_MODEL` | Model override (defaults to `gpt-5.4`). |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Lead capture + image/report cache (service role, bypasses RLS). |
+| `RESEND_API_KEY` / `RESEND_FROM` | Nurture email delivery. |
+| `HIGGSFIELD_API_KEY` / `HIGGSFIELD_SECRET` | Product preview image (optional; falls back gracefully). |
+| `UNSUBSCRIBE_SECRET` | HMAC key for one-click unsubscribe tokens. |
+| `OTP_SECRET` | HMAC key for hashing email verification codes. |
+| `NURTURE_TEST_SECRET` | Guards the forced nurture test endpoint. |
+| `NEXT_PUBLIC_SITE_URL` | Absolute origin for email links (set to the production domain). |
+| `AI_GATEWAY_API_KEY` | Optional — Vercel AI Gateway path. |
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push to GitHub (`main`).
+2. Link the repo: `vercel link` (team) and `vercel git connect` for auto-deploys.
+3. Add every variable above to Vercel (Production + Preview). Set
+   `NEXT_PUBLIC_SITE_URL` to the production URL, not `localhost`.
+4. Deploy: `vercel --prod` (or push to `main` once Git is connected).

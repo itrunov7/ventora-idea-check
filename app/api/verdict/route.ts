@@ -3,6 +3,8 @@ import { z } from "zod";
 import { generateVerdict } from "@/lib/ai";
 
 export const runtime = "nodejs";
+// AI verdict generation can run several seconds; give it headroom past the default.
+export const maxDuration = 60;
 
 const bodySchema = z.object({
   idea: z.string().trim().min(8).max(400),
