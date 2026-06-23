@@ -1,7 +1,7 @@
 import { Compass } from "lucide-react";
 
 import { EvaluationReport } from "@/components/evaluation/evaluation-report";
-import { VerdictTeaser } from "@/components/evaluation/verdict-teaser";
+import { ExampleFittedIdea } from "@/components/example-fitted-idea";
 import { FinderInput } from "@/components/finder-input";
 import { IdeaExperience } from "@/components/idea-experience";
 import { SiteHeader } from "@/components/site-header";
@@ -33,7 +33,7 @@ export default function FindPage() {
           source="find"
           compactLabel="Your idea finder"
           input={<FinderInput />}
-          aside={<VerdictTeaser />}
+          aside={<ExampleFittedIdea />}
           hero={{
             badge: (
               <Badge variant="accent" className="self-start">

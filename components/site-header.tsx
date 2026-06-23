@@ -10,7 +10,7 @@ export function SiteHeader({ active }: { active?: "check" | "find" }) {
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-[1100px] items-center justify-between px-6 py-4">
         <Link
-          href="/check"
+          href="/"
           className="text-sm font-semibold tracking-tight text-fg"
         >
           Ventora
