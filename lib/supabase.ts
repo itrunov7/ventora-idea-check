@@ -4,6 +4,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Evaluation, Verdict } from "@/lib/types";
 
+/** Which funnel captured the lead. Persisted so we can measure each separately. */
+export type LeadSource = "check" | "find";
+
 let client: SupabaseClient | null = null;
 
 /**
@@ -73,11 +76,13 @@ export async function insertLead(input: {
   email: string;
   idea: string;
   verdict: Verdict;
+  source: LeadSource;
 }): Promise<{ ok: true } | { ok: false; duplicate: boolean }> {
   const { error } = await getClient().from("leads").insert({
     email: input.email,
     idea: input.idea,
     verdict: input.verdict,
+    source: input.source,
   });
 
   if (error) {
@@ -95,6 +100,7 @@ export async function upsertLeadReport(input: {
   idea: string;
   verdict: Verdict;
   report: Evaluation;
+  source: LeadSource;
 }): Promise<void> {
   const { error } = await getClient()
     .from("leads")
@@ -104,6 +110,7 @@ export async function upsertLeadReport(input: {
         idea: input.idea,
         verdict: input.verdict,
         report: input.report,
+        source: input.source,
       },
       { onConflict: "email" },
     );

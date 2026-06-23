@@ -28,6 +28,8 @@ function errorMessage(code: string | null): string | null {
       return "You've used all 3 reports this week. Try again in a few days.";
     case "invalid_email":
       return "That email doesn't look right.";
+    case "send_failed":
+      return "We couldn't send the code right now. Try again in a moment.";
     default:
       return "Something went wrong. Please try again.";
   }

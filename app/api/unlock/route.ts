@@ -31,6 +31,7 @@ const bodySchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/),
   idea: z.string().trim().min(8).max(400),
   verdict: verdictSchema,
+  source: z.enum(["check", "find"]).default("check"),
 });
 
 export async function POST(request: Request) {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, code, idea, verdict } = parsed.data;
+  const { email, code, idea, verdict, source } = parsed.data;
 
   // Gate everything behind a verified one-time code.
   const verification = await verifyCode(email, code);
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await upsertLeadReport({ email, idea, verdict, report: evaluation });
+    await upsertLeadReport({ email, idea, verdict, report: evaluation, source });
   } catch (err) {
     console.error("lead persist failed", err);
   }

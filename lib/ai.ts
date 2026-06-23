@@ -163,6 +163,53 @@ const EVALUATION_SYSTEM = [
   GUARDRAILS,
 ].join("\n");
 
+const ideaSchema = z.object({
+  idea: z
+    .string()
+    .min(8)
+    .max(220)
+    .describe(
+      "One concrete startup idea in a single sentence, phrased the way a founder would describe it (problem + who it's for). No preamble.",
+    ),
+});
+
+export type FinderProfile = {
+  skills: string;
+  interests: string;
+  constraints?: string;
+};
+
+/**
+ * Turns a founder's skills/interests profile into one tailored startup idea
+ * sentence, which then flows into the same verdict -> report pipeline as a
+ * directly-typed idea. Idea discovery only — never a spec, plan, or build guide.
+ */
+export async function generateIdeaFromProfile(
+  profile: FinderProfile,
+): Promise<string> {
+  const lines = [
+    `Skills / what they're good at: ${profile.skills}`,
+    `Interests / domains they care about: ${profile.interests}`,
+  ];
+  if (profile.constraints?.trim()) {
+    lines.push(`Constraints / preferences: ${profile.constraints}`);
+  }
+
+  const { output } = await generateText({
+    model: MODEL,
+    output: Output.object({ schema: ideaSchema }),
+    system: [
+      "You are Ventora's startup idea finder. From a founder's skills and interests, propose ONE specific, buildable startup idea that plays to their strengths and has a plausible paying market.",
+      "Prefer focused, niche, software/digital-product ideas a solo founder could launch — not broad platforms or hardware.",
+      "Output ONLY the idea sentence (problem + target customer). Never explain your reasoning, list alternatives, or output build instructions.",
+      GUARDRAILS,
+    ].join("\n"),
+    prompt: `Find the single best startup idea for this person:\n\n${lines.join("\n")}`,
+  });
+
+  return (output as { idea: string }).idea.trim();
+}
+
 export async function generateVerdict(idea: string): Promise<Verdict> {
   const { output } = await generateText({
     model: MODEL,

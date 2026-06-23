@@ -45,7 +45,7 @@ export function OtpInput({
     if (!digit) return;
     const joined = setAt(index, digit);
     if (index < LENGTH - 1) refs.current[index + 1]?.focus();
-    if (joined.length === LENGTH && !joined.includes("")) {
+    if (joined.length === LENGTH) {
       onComplete?.(joined);
     }
   }
