@@ -1,3 +1,4 @@
+import { PreviewCard } from "@/components/preview-card";
 import type { Evaluation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -97,9 +98,18 @@ export function EvaluationReport({
         <EarningsPotential earnings={data.earnings} />
       </Reveal>
 
+      <SectionHead n="06" title="Your product, previewed" sub="a landing concept for this idea" />
+      <Reveal>
+        <PreviewCard idea={data.idea} headline={data.idea} subhead={data.synthesis} />
+      </Reveal>
+
       <div className="mt-6">
         <Reveal>
-          <VentoraSwap idea={data.idea} viabilityScore={data.viabilityScore} />
+          <VentoraSwap
+            idea={data.idea}
+            viabilityScore={data.viabilityScore}
+            whyItFitsYou={data.whyItFitsYou}
+          />
         </Reveal>
       </div>
     </div>

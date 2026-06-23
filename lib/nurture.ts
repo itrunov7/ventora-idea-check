@@ -1,8 +1,9 @@
 import "server-only";
 
 import { ctaUrl, unsubscribeUrl } from "@/lib/email/links";
-import { recap, shipped, waiting } from "@/lib/email/templates";
+import { recap, recapFind, shipped, waiting } from "@/lib/email/templates";
 import { sendNurtureEmail } from "@/lib/resend";
+import type { LeadSource } from "@/lib/supabase";
 import type { Evaluation } from "@/lib/types";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -13,6 +14,8 @@ export type EnqueueNurtureInput = {
   evaluation: Evaluation;
   /** Absolute origin used to build unsubscribe + link targets. */
   siteUrl: string;
+  /** Funnel the lead came from — selects the day-0 copy angle. */
+  source?: LeadSource;
   /**
    * Compress the schedule so day-2/day-5 fire in ~1 min — used by the forced
    * test trigger to verify the full sequence without waiting days.
@@ -38,12 +41,14 @@ function unsubHeaders(unsubUrl: string): Record<string, string> {
 export async function enqueueNurture(
   input: EnqueueNurtureInput,
 ): Promise<string[]> {
-  const { email, idea, evaluation, siteUrl, immediate } = input;
+  const { email, idea, evaluation, siteUrl, source, immediate } = input;
 
   const unsubUrl = unsubscribeUrl(email, siteUrl);
   const headers = unsubHeaders(unsubUrl);
 
-  const day0 = recap(evaluation, {
+  // Finder leads get the "your fitted idea is waiting" angle; check uses recap.
+  const day0Template = source === "find" ? recapFind : recap;
+  const day0 = day0Template(evaluation, {
     build: ctaUrl(idea, "day0"),
     unsubscribe: unsubUrl,
   });

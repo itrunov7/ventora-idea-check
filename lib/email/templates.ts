@@ -149,6 +149,61 @@ Unsubscribe: ${links.unsubscribe}`;
   return { subject, html: layout(inner, links.unsubscribe), text };
 }
 
+/** Day 0 (finder funnel) — same recap, "your fitted idea is waiting" angle. */
+export function recapFind(
+  evaluation: Evaluation,
+  links: TemplateLinks,
+): EmailContent {
+  const subject = `Your fitted idea: ${evaluation.viabilityScore}/100`;
+
+  const greens = evaluation.greenLights
+    .slice(0, 3)
+    .map((g) => `<li style="margin-bottom:6px;">${escapeHtml(g.text)}</li>`)
+    .join("");
+
+  const intro =
+    evaluation.whyItFitsYou?.intro ??
+    "We matched this idea to your finder answers — it fits how you want to build.";
+
+  const inner = `
+<p style="margin:0 0 8px;font-size:14px;color:#777;">Your fitted idea is waiting</p>
+<h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;">${evaluation.viabilityScore}/100 &middot; ${escapeHtml(evaluation.verdict.label)}</h1>
+<p style="margin:0 0 24px;">${escapeHtml(intro)}</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:collapse;">
+<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Demand</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(evaluation.quickStats.demand)}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #eee;"><strong>Market (TAM)</strong></td><td style="padding:8px 0;border-top:1px solid #eee;">${escapeHtml(evaluation.market.tam.value)}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;"><strong>Suggested price</strong></td><td style="padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">${escapeHtml(evaluation.pricing.suggested)} ${escapeHtml(evaluation.pricing.unit)}</td></tr>
+</table>
+
+<h2 style="margin:0 0 8px;font-size:18px;">Why it fits you</h2>
+<ul style="margin:0 0 24px;padding-left:20px;">${greens}</ul>
+
+<p style="margin:0 0 24px;">${button(links.build, "Build your fitted idea")}</p>
+<p style="margin:0;color:#777;font-size:14px;">You found the idea. Now it's waiting on you to build it.</p>
+`;
+
+  const text = `Your fitted idea: ${evaluation.viabilityScore}/100 (${evaluation.verdict.label})
+
+${intro}
+
+Demand: ${evaluation.quickStats.demand}
+Market (TAM): ${evaluation.market.tam.value}
+Suggested price: ${evaluation.pricing.suggested} ${evaluation.pricing.unit}
+
+Why it fits you:
+${evaluation.greenLights
+  .slice(0, 3)
+  .map((g) => `- ${g.text}`)
+  .join("\n")}
+
+Build your fitted idea: ${links.build}
+
+Unsubscribe: ${links.unsubscribe}`;
+
+  return { subject, html: layout(inner, links.unsubscribe), text };
+}
+
 /** Day 2 — social proof / momentum. */
 export function shipped(idea: string, links: TemplateLinks): EmailContent {
   const subject = "Founders shipped these in 48h";

@@ -147,6 +147,7 @@ export async function POST(request: Request) {
         idea,
         evaluation,
         siteUrl,
+        source,
       });
       await updateLeadNurture(email, { evaluation, scheduledEmailIds });
     } catch (err) {

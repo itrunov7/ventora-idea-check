@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 
 import { track } from "@/lib/analytics";
+import type { WhyItFitsYou } from "@/lib/types";
 import { buildVentoraHandoffUrl } from "@/lib/ventora";
 import { cn } from "@/lib/utils";
 
@@ -45,11 +46,13 @@ function Compare({
 export function VentoraSwap({
   idea,
   viabilityScore,
+  whyItFitsYou,
 }: {
   idea: string;
   viabilityScore: number;
+  whyItFitsYou?: WhyItFitsYou;
 }) {
-  const href = buildVentoraHandoffUrl(idea);
+  const href = buildVentoraHandoffUrl(idea, { whyItFitsYou });
   return (
     <section
       className="relative overflow-hidden rounded-2xl border border-[#2a1b6b] text-white shadow-[0_24px_48px_-20px_rgba(36,26,82,.6)]"
