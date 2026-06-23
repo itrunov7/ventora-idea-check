@@ -1,4 +1,3 @@
-import { PreviewCard } from "@/components/preview-card";
 import type { Evaluation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -96,11 +95,6 @@ export function EvaluationReport({
       <SectionHead n="05" title="What this could earn you" sub="estimates from your pricing" />
       <Reveal>
         <EarningsPotential earnings={data.earnings} />
-      </Reveal>
-
-      <SectionHead n="06" title="Your product, previewed" sub="a landing concept for this idea" />
-      <Reveal>
-        <PreviewCard idea={data.idea} headline={data.idea} subhead={data.synthesis} />
       </Reveal>
 
       <div className="mt-6">

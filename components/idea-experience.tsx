@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { VerdictCard, VerdictSkeleton } from "@/components/verdict-card";
 import type { QuizAnswers } from "@/lib/quiz";
 import type { Evaluation, Verdict } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "checking" | "verdict" | "unlocked";
 
@@ -46,6 +47,11 @@ type IdeaFlowValue = {
   pending: boolean;
   /** Verdict-stage error message, if any. */
   error: string | null;
+  /**
+   * Lets the input slot request the full-width layout (and hide the aside) —
+   * e.g. once the finder has fitted ideas to show in a roomy grid.
+   */
+  setExpanded: (expanded: boolean) => void;
 };
 
 const IdeaFlowContext = createContext<IdeaFlowValue | null>(null);
@@ -85,6 +91,7 @@ export function IdeaExperience({
   const [submittedIdea, setSubmittedIdea] = useState("");
   const [finder, setFinder] = useState<FinderContext | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [expanded, setExpanded] = useState(false);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [checkError, setCheckError] = useState<string | null>(null);
@@ -263,11 +270,17 @@ export function IdeaExperience({
     onIdea: handleIdea,
     pending: phase === "checking",
     error: checkError,
+    setExpanded,
   };
 
   return (
     <IdeaFlowContext.Provider value={flowValue}>
-      <section className="grid w-full items-center gap-10 lg:grid-cols-2">
+      <section
+        className={cn(
+          "grid w-full gap-10",
+          expanded ? "grid-cols-1 items-start" : "items-center lg:grid-cols-2",
+        )}
+      >
         <div className="flex flex-col items-start gap-7">
           <div className="flex flex-col gap-5">
             {hero.badge}
@@ -277,13 +290,18 @@ export function IdeaExperience({
             <p className="text-body text-fg-muted">{hero.description}</p>
           </div>
 
-          <div className="flex w-full max-w-2xl flex-col gap-8">
+          <div
+            className={cn(
+              "flex w-full flex-col gap-8",
+              expanded ? null : "max-w-2xl",
+            )}
+          >
             {input}
             {phase === "checking" ? <VerdictSkeleton /> : null}
           </div>
         </div>
 
-        {aside ? (
+        {aside && !expanded ? (
           <div className="w-full lg:max-w-[380px] lg:justify-self-end">
             {aside}
           </div>

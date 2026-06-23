@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { CandidateCards } from "@/components/candidate-cards";
@@ -27,7 +27,7 @@ import type { Candidate, RefineDirection } from "@/lib/types";
  * no account.
  */
 export function FinderInput() {
-  const { onIdea, pending, error } = useIdeaFlow();
+  const { onIdea, pending, error, setExpanded } = useIdeaFlow();
   const [discovering, setDiscovering] = useState(false);
   const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<QuizAnswers | null>(null);
@@ -39,6 +39,12 @@ export function FinderInput() {
 
   const busy = discovering || pending || refining !== null;
   const message = discoverError ?? error;
+
+  // Once there are fitted ideas to pick (or one is being refined), ask the
+  // experience for the full-width layout so the cards aren't cramped.
+  useEffect(() => {
+    setExpanded(Boolean(candidates || selected));
+  }, [candidates, selected, setExpanded]);
 
   async function handleComplete(quizAnswers: QuizAnswers) {
     if (busy) return;

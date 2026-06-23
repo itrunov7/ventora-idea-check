@@ -33,7 +33,7 @@ export function CandidateCards({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {candidates.map((candidate) => (
           <CandidateCard
             key={candidate.id}
@@ -65,7 +65,7 @@ function CandidateCard({
       onClick={onSelect}
       disabled={disabled}
       className={cn(
-        "group flex w-full flex-col gap-4 rounded-2xl border border-border bg-surface p-5 text-left shadow-soft transition-colors",
+        "group flex h-full w-full flex-col gap-4 rounded-2xl border border-border bg-surface p-5 text-left shadow-soft transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
         "hover:border-accent hover:bg-accent/5",
         "disabled:cursor-not-allowed disabled:opacity-60",
@@ -100,7 +100,7 @@ function CandidateCard({
         </p>
       </div>
 
-      <span className="inline-flex items-center gap-2 text-sm font-medium text-accent">
+      <span className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-accent">
         {loading ? (
           <>
             <Loader2 className="size-4 animate-spin" />
