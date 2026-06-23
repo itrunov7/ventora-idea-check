@@ -128,3 +128,16 @@ export type Candidate = {
 export type CandidatesResponse = {
   candidates: Candidate[];
 };
+
+/** Direction the user nudges a picked idea while refining it (Phase F3). */
+export type RefineDirection = "niche" | "broader" | "different";
+
+/** The editable fields sent back to the model when refining (no id/scores). */
+export type CandidateSeed = Pick<
+  Candidate,
+  "name" | "oneLiner" | "fitsYou" | "buildableInVentora"
+>;
+
+export type RefineResponse = {
+  candidate: Candidate;
+};

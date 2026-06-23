@@ -5,7 +5,13 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import { quizAnswersToSummary, type QuizAnswers } from "@/lib/quiz";
-import type { Candidate, Evaluation, Verdict } from "@/lib/types";
+import type {
+  Candidate,
+  CandidateSeed,
+  Evaluation,
+  RefineDirection,
+  Verdict,
+} from "@/lib/types";
 
 const MODEL = openai(process.env.OPENAI_MODEL ?? "gpt-5.4");
 
@@ -351,6 +357,75 @@ export async function generateCandidates(
     return await attempt();
   } catch (err) {
     console.error("candidate generation failed, retrying once", err);
+    return await attempt();
+  }
+}
+
+const REFINE_DIRECTIONS: Record<RefineDirection, string> = {
+  niche:
+    "Make it MORE NICHE: sharpen it to a narrower, more specific audience or wedge. Smaller beachhead, clearer 'this is exactly for me' pull. Do not water it down — keep it ambitious within that niche.",
+  broader:
+    "Make it BROADER: widen the audience or market it can serve while staying a focused product. Bigger TAM and a more horizontal angle, without becoming a vague everything-platform.",
+  different:
+    "Take a DIFFERENT ANGLE: keep the same founder fit, but attack it from a meaningfully different wedge, audience, or business model. It should feel like a fresh take, not a rename of the same idea.",
+};
+
+const REFINE_SYSTEM = [
+  "You are Ventora's idea finder. The founder has picked one idea and wants you to refine it in a specific direction while keeping it built around THIS person.",
+  "Return ONE refined idea as JSON matching the schema exactly.",
+  "CRITICAL: stay within the founder's fit profile from their quiz answers — same role/skill, unfair advantage, audience access, and interests. The refined idea must still feel like it was made for them.",
+  "Keep the SAME bar as before: an ambitious, advanced, defensible software product Ventora can build, with strong/obvious monetization AND a realistically buildable v1. No hardware, services, content, or offline businesses.",
+  "'fitsYou' must reference the user's ACTUAL answers (quote or paraphrase real selections), never generic flattery.",
+  "'buildableInVentora' names concretely what Ventora would build for a strong v1, in one sentence.",
+  "teaserScores (fit/feasibility/profit) are rough ESTIMATES, 0-100, and must stay honest — do not inflate.",
+  "No fabricated citations, sources, or precise statistics.",
+  GUARDRAILS,
+].join("\n");
+
+/**
+ * Takes a candidate the user already picked and nudges it in one direction
+ * (niche / broader / different angle) WITHOUT leaving their quiz fit profile.
+ * One AI call, validated with zod, retries ONCE on parse failure. The id is
+ * assigned server-side.
+ */
+export async function refineCandidate(
+  answers: QuizAnswers,
+  candidate: CandidateSeed,
+  direction: RefineDirection,
+): Promise<Candidate> {
+  const summary = quizAnswersToSummary(answers);
+  const prompt = [
+    "Here are the founder's quiz answers (their fit profile — do not leave it):",
+    "",
+    summary,
+    "",
+    "Here is the idea they picked:",
+    `Name: ${candidate.name}`,
+    `One-liner: ${candidate.oneLiner}`,
+    `Why it fits them: ${candidate.fitsYou}`,
+    `What Ventora would build: ${candidate.buildableInVentora}`,
+    "",
+    "Refine it as follows:",
+    REFINE_DIRECTIONS[direction],
+    "",
+    "Return ONE candidate idea as JSON matching the schema exactly. Make 'fitsYou' tie directly to the quiz answers above and keep the teaserScores honest.",
+  ].join("\n");
+
+  async function attempt(): Promise<Candidate> {
+    const { output } = await generateText({
+      model: MODEL,
+      output: Output.object({ schema: candidateSchema }),
+      system: REFINE_SYSTEM,
+      prompt,
+    });
+    const refined = candidateSchema.parse(output);
+    return { ...refined, id: crypto.randomUUID() };
+  }
+
+  try {
+    return await attempt();
+  } catch (err) {
+    console.error("candidate refine failed, retrying once", err);
     return await attempt();
   }
 }
