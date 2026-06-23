@@ -4,7 +4,8 @@ import { openai } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
-import type { Evaluation, Verdict } from "@/lib/types";
+import { quizAnswersToSummary, type QuizAnswers } from "@/lib/quiz";
+import type { Candidate, Evaluation, Verdict } from "@/lib/types";
 
 const MODEL = openai(process.env.OPENAI_MODEL ?? "gpt-5.4");
 
@@ -261,6 +262,95 @@ export async function generateEvaluation(idea: string): Promise<Evaluation> {
     return await attempt();
   } catch (err) {
     console.error("evaluation generation failed, retrying once", err);
+    return await attempt();
+  }
+}
+
+// AI returns everything except `id`; ids are assigned server-side so they're
+// always unique and never fabricated by the model.
+const candidateSchema = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(48)
+    .describe("Memorable product name — short and brandable."),
+  oneLiner: z
+    .string()
+    .max(120)
+    .describe("One punchy sentence on what it is, <= 120 chars."),
+  fitsYou: z
+    .string()
+    .describe(
+      "1-2 sentences explaining why this fits THIS user, referencing their actual quiz answers (role, unfair advantage, audience, interests). Never generic flattery.",
+    ),
+  buildableInVentora: z
+    .string()
+    .describe("One sentence on what Ventora would build for them."),
+  teaserScores: z.object({
+    fit: z.number().min(0).max(100).describe("How well it matches the user."),
+    feasibility: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe("Buildability as a software product in Ventora."),
+    profit: z.number().min(0).max(100).describe("Revenue potential."),
+  }),
+});
+
+const candidatesSchema = z.object({
+  candidates: z.array(candidateSchema).min(2).max(3),
+});
+
+const CANDIDATES_SYSTEM = [
+  "You are Ventora's idea finder. From a founder's quiz answers, propose 2-3 distinct, AMBITIOUS startup ideas that feel built around THIS person and make them excited to build.",
+  "Each idea MUST be a software product Ventora can build (web/mobile app, SaaS, tool, dashboard, marketplace, AI feature) — never hardware, services, content, or offline businesses.",
+  "BAR FOR EACH IDEA — advanced, feasible, and lucrative:",
+  "- Aim high: modern, sophisticated, defensible software businesses (AI-native, vertical SaaS, B2B workflow tools, marketplaces, automation) — not a thin wrapper, toy, or generic to-do clone.",
+  "- Strong, obvious monetization: recurring/scalable revenue, clear willingness to pay (ideally B2B or prosumer), and real pricing power. Favor ideas with a credible path to meaningful MRR.",
+  "- Still genuinely BUILDABLE: an ambitious-but-shippable v1 Ventora can launch, then expand — not a moonshot that needs a huge team or years before first revenue.",
+  "- Make the founder think 'this could actually be big AND I could realistically build it.'",
+  "GENERATION RULES:",
+  "- 'fitsYou' must reference the user's ACTUAL answers (their role/skill, unfair advantage, audience access, interests). Quote or paraphrase real selections; never generic flattery that could apply to anyone.",
+  "- Make the ideas genuinely different from each other (different angle, audience, or wedge), and specific — not broad platforms.",
+  "- 'buildableInVentora' names concretely what Ventora would build for a strong v1, in one sentence.",
+  "- teaserScores (fit/feasibility/profit) are rough ESTIMATES, 0-100, and must stay honest: only score feasibility high when the v1 is truly buildable, and only score profit high when the monetization path is real. Do not inflate.",
+  "- No fabricated citations, sources, or precise statistics.",
+  GUARDRAILS,
+].join("\n");
+
+/**
+ * Turns quiz answers into 2-3 fitted, software-buildable candidate ideas — the
+ * free, pre-gate "wow, these actually fit me" hook. Validates with zod and
+ * retries ONCE on a parse failure. Ids are assigned server-side.
+ */
+export async function generateCandidates(
+  answers: QuizAnswers,
+): Promise<Candidate[]> {
+  const summary = quizAnswersToSummary(answers);
+  const prompt = [
+    "Here are the founder's quiz answers:",
+    "",
+    summary,
+    "",
+    "Propose 2-3 candidate ideas as JSON matching the schema exactly. Make each 'fitsYou' tie directly to the answers above.",
+    "Push for ambitious, advanced software businesses with a clear, lucrative monetization path AND a realistically buildable v1 — ideas that feel exciting and big, not safe or generic. Keep the teaserScores honest.",
+  ].join("\n");
+
+  async function attempt(): Promise<Candidate[]> {
+    const { output } = await generateText({
+      model: MODEL,
+      output: Output.object({ schema: candidatesSchema }),
+      system: CANDIDATES_SYSTEM,
+      prompt,
+    });
+    const { candidates } = candidatesSchema.parse(output);
+    return candidates.map((c) => ({ ...c, id: crypto.randomUUID() }));
+  }
+
+  try {
+    return await attempt();
+  } catch (err) {
+    console.error("candidate generation failed, retrying once", err);
     return await attempt();
   }
 }

@@ -221,3 +221,20 @@ export function quizAnswersToProfile(answers: QuizAnswers): FinderProfileInput {
     constraints: constraints ? constraints.slice(0, 400) : undefined,
   };
 }
+
+/**
+ * Build a labeled, human-readable summary of every answered quiz step. Unlike
+ * {@link quizAnswersToProfile} (which collapses answers to fit `/api/find`),
+ * this keeps each signal explicit so the model can ground a candidate's
+ * "why it fits you" in the user's ACTUAL selections — skill, audience,
+ * interests — instead of generic flattery.
+ */
+export function quizAnswersToSummary(answers: QuizAnswers): string {
+  return QUIZ_QUESTIONS.map((q) => {
+    const value = answerLabels(answers, q.id);
+    if (!value) return null;
+    return `${q.prompt} -> ${value}`;
+  })
+    .filter(Boolean)
+    .join("\n");
+}

@@ -107,3 +107,24 @@ export type UnlockResponse = {
   evaluation: Evaluation;
   ideaHash: string;
 };
+
+/** Teaser scores shown on a candidate card; each 0-100, all estimates. */
+export type CandidateTeaserScores = {
+  fit: number;
+  feasibility: number;
+  profit: number;
+};
+
+/** A free, pre-gate fitted idea (Phase F2). */
+export type Candidate = {
+  id: string;
+  name: string;
+  oneLiner: string;
+  fitsYou: string;
+  buildableInVentora: string;
+  teaserScores: CandidateTeaserScores;
+};
+
+export type CandidatesResponse = {
+  candidates: Candidate[];
+};
