@@ -7,6 +7,8 @@
  * run stays under ~90 seconds.
  */
 
+import type { WhyItFitsYou } from "@/lib/types";
+
 /** Higher-level signal each question feeds. Used only for answer -> profile mapping. */
 export type QuizSignal =
   | "unfairAdvantage"
@@ -168,15 +170,17 @@ function labelFor(questionId: string, value: string): string {
   return opt?.label ?? value;
 }
 
+/** Resolve an answer (single or multi) to its list of human labels. */
+function answerLabelList(answers: QuizAnswers, questionId: string): string[] {
+  const raw = answers[questionId];
+  if (!raw) return [];
+  const values = Array.isArray(raw) ? raw : [raw];
+  return values.map((v) => labelFor(questionId, v)).filter(Boolean);
+}
+
 /** Join the labels for an answer (single or multi) into a readable phrase. */
 function answerLabels(answers: QuizAnswers, questionId: string): string {
-  const raw = answers[questionId];
-  if (!raw) return "";
-  const values = Array.isArray(raw) ? raw : [raw];
-  return values
-    .map((v) => labelFor(questionId, v))
-    .filter(Boolean)
-    .join(", ");
+  return answerLabelList(answers, questionId).join(", ");
 }
 
 export type FinderProfileInput = {
@@ -237,4 +241,30 @@ export function quizAnswersToSummary(answers: QuizAnswers): string {
   })
     .filter(Boolean)
     .join("\n");
+}
+
+/**
+ * Build the Finder-only "why this fits you" section purely from the user's
+ * actual quiz selections (unfair advantage, ambition, interests) plus the
+ * chosen candidate's existing `fitsYou` line. Deterministic — no AI, no
+ * regenerated market copy. Returns null when the quiz carries no signal so
+ * callers can skip the section entirely.
+ */
+export function buildWhyItFitsYou(
+  answers: QuizAnswers,
+  fitsYou?: string,
+): WhyItFitsYou | null {
+  const advantage = answerLabelList(answers, "advantage");
+  const ambition = answerLabels(answers, "ambition");
+  const interests = answerLabelList(answers, "interests");
+
+  if (!advantage.length && !ambition && !interests.length) return null;
+
+  return {
+    intro: "Here's how this idea lines up with what you told us.",
+    advantage,
+    ambition,
+    interests,
+    fitsYou: fitsYou?.trim() || undefined,
+  };
 }

@@ -10,6 +10,7 @@ import { ScoresRadar } from "./scores-radar";
 import { SignalsGrid } from "./signals-grid";
 import { VentoraSwap } from "./ventora-swap";
 import { VerdictCockpit } from "./verdict-cockpit";
+import { WhyItFitsYou } from "./why-it-fits-you";
 
 function SectionHead({
   n,
@@ -56,6 +57,15 @@ export function EvaluationReport({
       <Reveal>
         <VerdictCockpit data={data} />
       </Reveal>
+
+      {data.whyItFitsYou ? (
+        <>
+          <SectionHead n="00" title="Why this fits you" sub="from your finder answers" />
+          <Reveal>
+            <WhyItFitsYou data={data.whyItFitsYou} />
+          </Reveal>
+        </>
+      ) : null}
 
       <SectionHead n="01" title="What the signals say" sub="weighted from multiple sources" />
       <Reveal>

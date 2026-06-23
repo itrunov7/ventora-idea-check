@@ -65,6 +65,19 @@ export type Earnings = {
   benefits: Benefit[];
 };
 
+/**
+ * Finder-only section grounding the chosen idea in the user's real quiz
+ * answers. Built deterministically from selected labels — no regenerated
+ * market copy. Embedded on {@link Evaluation} so it persists in leads.report.
+ */
+export type WhyItFitsYou = {
+  intro: string;
+  advantage: string[];
+  ambition: string;
+  interests: string[];
+  fitsYou?: string;
+};
+
 export type Evaluation = {
   idea: string;
   viabilityScore: number;
@@ -101,6 +114,8 @@ export type Evaluation = {
     rangeHighPct: number;
   };
   earnings: Earnings;
+  /** Finder-only "why this fits you" section; absent for Idea Check reports. */
+  whyItFitsYou?: WhyItFitsYou;
 };
 
 export type UnlockResponse = {

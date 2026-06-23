@@ -113,7 +113,10 @@ export function FinderInput() {
     if (busy || !selected) return;
     const oneLiner = draftOneLiner.trim();
     if (oneLiner.length < 4) return;
-    onIdea(`${selected.name} — ${oneLiner}`);
+    onIdea(`${selected.name} — ${oneLiner}`, {
+      answers: answers ?? {},
+      fitsYou: selected.fitsYou,
+    });
   }
 
   function handleBackToIdeas() {

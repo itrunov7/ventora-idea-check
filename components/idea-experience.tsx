@@ -13,6 +13,7 @@ import { EvaluationReport } from "@/components/evaluation/evaluation-report";
 import { ReportGate } from "@/components/report-gate";
 import { Button } from "@/components/ui/button";
 import { VerdictCard, VerdictSkeleton } from "@/components/verdict-card";
+import type { QuizAnswers } from "@/lib/quiz";
 import type { Evaluation, Verdict } from "@/lib/types";
 
 type Phase = "idle" | "checking" | "verdict" | "unlocked";
@@ -21,13 +22,26 @@ type Phase = "idle" | "checking" | "verdict" | "unlocked";
 export type IdeaSource = "check" | "find";
 
 /**
+ * Finder-only payload carried alongside the chosen idea so the report can
+ * ground a "why this fits you" section in the user's real quiz answers.
+ */
+export type FinderContext = {
+  answers: QuizAnswers;
+  fitsYou?: string;
+};
+
+/**
  * Shared state the funnel-specific input slot needs to drive the pipeline.
  * Consumed via {@link useIdeaFlow} so server-rendered pages can hand the engine
  * a client input element without passing a function across the RSC boundary.
  */
 type IdeaFlowValue = {
-  /** Hand a resolved idea string to the shared verdict -> gate -> report flow. */
-  onIdea: (idea: string) => void;
+  /**
+   * Hand a resolved idea string to the shared verdict -> gate -> report flow.
+   * Finder inputs may pass quiz context used only to build the find report's
+   * "why this fits you" section.
+   */
+  onIdea: (idea: string, finder?: FinderContext) => void;
   /** True while the verdict request is in flight. */
   pending: boolean;
   /** Verdict-stage error message, if any. */
@@ -69,6 +83,7 @@ export function IdeaExperience({
   children?: React.ReactNode;
 }) {
   const [submittedIdea, setSubmittedIdea] = useState("");
+  const [finder, setFinder] = useState<FinderContext | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
@@ -96,7 +111,7 @@ export function IdeaExperience({
   }, [hasResult, phase]);
 
   const handleIdea = useCallback(
-    async (rawIdea: string) => {
+    async (rawIdea: string, finderContext?: FinderContext) => {
       const value = rawIdea.trim();
       if (value.length < 8 || phase === "checking") return;
 
@@ -105,6 +120,7 @@ export function IdeaExperience({
       setVerdict(null);
       setEvaluation(null);
       setUnlockError(null);
+      setFinder(finderContext ?? null);
 
       try {
         const res = await fetch("/api/verdict", {
@@ -166,6 +182,7 @@ export function IdeaExperience({
           idea: submittedIdea,
           verdict,
           source,
+          ...(source === "find" && finder ? { finder } : {}),
         }),
       });
 
@@ -195,6 +212,7 @@ export function IdeaExperience({
     setPhase("idle");
     setVerdict(null);
     setEvaluation(null);
+    setFinder(null);
     setUnlockError(null);
     setCheckError(null);
     setCodeSent(false);

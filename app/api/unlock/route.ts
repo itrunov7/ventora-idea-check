@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { generateEvaluation } from "@/lib/ai";
 import { ideaHash } from "@/lib/hash";
+import { buildWhyItFitsYou } from "@/lib/quiz";
 import { enqueueNurture } from "@/lib/nurture";
 import { REPORT_WINDOW_MS, REPORTS_PER_WINDOW } from "@/lib/otp";
 import {
@@ -26,12 +27,18 @@ const verdictSchema = z.object({
   summary: z.string(),
 });
 
+const finderSchema = z.object({
+  answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+  fitsYou: z.string().optional(),
+});
+
 const bodySchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   code: z.string().trim().regex(/^\d{6}$/),
   idea: z.string().trim().min(8).max(400),
   verdict: verdictSchema,
   source: z.enum(["check", "find"]).default("check"),
+  finder: finderSchema.optional(),
 });
 
 export async function POST(request: Request) {
@@ -58,7 +65,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, code, idea, verdict, source } = parsed.data;
+  const { email, code, idea, verdict, source, finder } = parsed.data;
 
   // Gate everything behind a verified one-time code.
   const verification = await verifyCode(email, code);
@@ -107,6 +114,13 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("evaluation generation failed", err);
     return Response.json({ error: "generation_failed" }, { status: 502 });
+  }
+
+  // Finder reports get a "why this fits you" section grounded in the user's
+  // real quiz answers. Built deterministically, no extra generation.
+  if (source === "find" && finder) {
+    const whyItFitsYou = buildWhyItFitsYou(finder.answers, finder.fitsYou);
+    if (whyItFitsYou) evaluation = { ...evaluation, whyItFitsYou };
   }
 
   try {

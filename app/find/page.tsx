@@ -7,6 +7,21 @@ import { IdeaExperience } from "@/components/idea-experience";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { EXAMPLE_EVALUATION } from "@/lib/example-evaluation";
+import type { Evaluation } from "@/lib/types";
+
+// Finder-only preview: the shared example with a "why this fits you" section so
+// the /find example mirrors a real find report. /check stays untouched.
+const FIND_EXAMPLE: Evaluation = {
+  ...EXAMPLE_EVALUATION,
+  whyItFitsYou: {
+    intro: "Here's how this idea lines up with what you told us.",
+    advantage: ["Deep industry experience", "An existing audience"],
+    ambition: "Build something big",
+    interests: ["Productivity & work", "AI"],
+    fitsYou:
+      "You already live in this workflow and have a niche audience who feels the pain — a textbook unfair-advantage wedge.",
+  },
+};
 
 export default function FindPage() {
   return (
@@ -40,7 +55,7 @@ export default function FindPage() {
 
           <EvaluationReport
             mode="example"
-            data={EXAMPLE_EVALUATION}
+            data={FIND_EXAMPLE}
             className="mx-auto mt-6 w-full max-w-[1000px]"
           />
         </IdeaExperience>
